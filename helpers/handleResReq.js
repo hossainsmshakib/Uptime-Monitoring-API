@@ -1,6 +1,8 @@
 //dependencies
 const {StringDecoder} = require('string_decoder');
 const url = require('url');
+const routes = require('../routes');
+const {notFoundHandler} = require('../handlers/routeHandlers/notFoundHandler');
 
 
 const handler = {};
@@ -10,30 +12,46 @@ handler.handleReqRes = (req, res) => {
     // req handeling
     //get the url and parse it
     const parseUrl = url.parse(req.url, true);
-    console.log(parseUrl);
 
     const path = parseUrl.pathname;
-    console.log(path);
     // remove / from path
-    const trimPath = path.replace(/^\/+|\/+$/g, '');
-    console.log(trimPath);
+    const trimmedPath = path.replace(/^\/+|\/+$/g, '');
 
     // get any method in lowercase
     const method = req.method.toLowerCase();
-    console.log(method);
 
     // get the query string
     const queryStringObject = parseUrl.query;
-    console.log(queryStringObject);
 
      //headers of req
     const headerObject = parseUrl.headers;
-    console.log(headerObject);
+
+    const requestProperties = {
+        parseUrl,
+        path,
+        trimmedPath,
+        method,
+        queryStringObject,
+        headerObject,
+    };
 
      //get the body of req data
     const decoder = new StringDecoder('utf-8');
     let realData = '';
+
+    const chosenHandler = routes[trimmedPath] ? routes[trimmedPath] : notFoundHandler;
     
+    chosenHandler(requestProperties, (statuscode, payload) => {
+        statuscode = typeof(statuscode) === 'number' ? statuscode : 500;
+        payload = typeof(payload) === 'object' ? payload : {};
+
+        const payloadString = JSON.stringify(payload);
+
+        //return the final response
+        res.writeHead(statuscode);
+        res.end(payloadString);
+    });
+
     req.on('data', (buffer) => {
         realData += decoder.write(buffer);
     });
@@ -42,7 +60,7 @@ handler.handleReqRes = (req, res) => {
         realData += decoder.end();
         console.log(realData);
         // response handle
-        res.end('Hello SD');
+        res.end('Hello from Node..');
     });  
 };
 
