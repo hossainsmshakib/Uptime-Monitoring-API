@@ -19,7 +19,8 @@ app.createServer = () => {
     });
 };
 
+
 //handle req response
-app.handleReqRes = handleReqRes;
+app.handleReqRes =handleReqRes;
 //start server
 app.createServer();
